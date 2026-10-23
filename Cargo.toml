@@ -1,0 +1,24 @@
+[workspace]
+resolver = "2"
+members = ["smash-core", "smash-engine"]
+
+# Smash — red-teaming / breach-testing harness for hardening your own apps.
+#
+# Architecture (see docs): an executor-referee. The service drives execution
+# and referees verdicts; strategy (the decider) lives in whatever plays the
+# arena — an external harness, or the in-service replay driver for regression.
+# smash-core is the keystone: dependency-free domain types (the typed scope ×
+# authority gate, manifest schemas, observations, verdict contracts, run
+# lifecycle, record correlation). It is std-only and links into every other
+# crate, so it carries no dependencies of its own. smash-engine is where the
+# wire envelope, canonicalization, transport, fixtures, and execution live —
+# and where third-party dependencies are allowed, reviewed explicitly.
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.74"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Suo-commerce/smash"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"

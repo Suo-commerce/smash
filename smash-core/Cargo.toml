@@ -1,0 +1,17 @@
+[package]
+name = "smash-core"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Dependency-free domain keystone for Smash: capabilities (the typed scope × authority gate), manifest schemas, observations, verdict contracts, run lifecycle, and record correlation. Serialization, transport, the match log, and the oracle live in downstream crates."
+publish = false
+
+[dependencies]
+# Intentionally empty. smash-core is std-only: argument canonicalization and
+# hashing live upstream in smash-engine, which speaks the wire envelope. Any dep
+# added here is a dep in the keystone every other crate links — justify it.
+
+[lints]
+workspace = true
