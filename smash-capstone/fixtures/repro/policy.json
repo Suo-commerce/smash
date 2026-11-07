@@ -1,0 +1,19 @@
+{
+  "protocol_version": 1,
+  "run_id": "authorized-authenticated-retry-capstone",
+  "broken_root": "broken",
+  "fixed_root": "fixed",
+  "artifact": "artifact.json",
+  "target_tool": "authenticated-retry",
+  "entrypoint": "target-authenticated-repro.py",
+  "limits": {
+    "wall_ms": 5000,
+    "output_bytes": 16384,
+    "memory_bytes": 134217728,
+    "processes": 4
+  },
+  "unsafe_seeding": true,
+  "build_under_test": true,
+  "privileged_containment": true,
+  "unsafe_development": false
+}

@@ -2,7 +2,7 @@
 
 Oct 22, 2026 · @Jarmo
 
-Revision 0.3 · Proposed specification. Requirements below describe intended behavior, not verified implementation. Storm Gate integration details inherited from the original must be confirmed against its source before implementation.
+Revision 0.3 · Proposed specification, with dated implementation annotations. Except for the annotated M1 and narrow M2, M3, and M4 workflows, requirements below describe intended behavior, not verified implementation. Storm Gate integration details inherited from the original must be confirmed against its source before implementation. Implementation annotations do not ratify the proposed MVP, generalized CLI, target adapters, signing, staging, or release acceptance criteria.
 
 ## 1. Product promise
 
@@ -94,6 +94,53 @@ A fighter exposes a manifest with a stable ID, version, technique handles, effec
 
 The decider selects registered handles and narrowly typed parameters. It cannot submit arbitrary URLs, payloads, free-form request bodies, or an authority declaration that overrides the registered technique.
 
+### Read-only repository reconnaissance (M1)
+
+M1 provides a separate, narrow research workflow beside the behavioral candidate pipeline. `smash recon` accepts a repository path and a versioned, one-response-per-query planner script. Its untrusted planner proposes `ExperimentDraft` values over a closed vocabulary: repository file listing, bounded manifest or source reads, working-tree status, and the single literal read-only command `git-status`. It cannot grant authority, register operations, dispatch behavioral probes, build or test the repository, make HTTP requests, or invoke a general shell. M1 does not implement a hosted-model provider.
+
+Repository inspection uses bounded UTF-8 reads, sorted inventory, and regular-file reads with parent and leaf symlinks refused. Secret exclusion is based on path names and extensions, not content scanning or a guarantee that artifacts contain no credentials. Source text and comments remain untrusted evidence, including when embedded in a bounded `ResearchFact` delivered to this research planner; that path is outside the decider containment guarantee in Section 6.
+
+Query, experiment, file, artifact, evidence, and **exact serialized observation** limits are enforced, with reserved space for a terminal budget refusal. Wall-time checks occur between planner and blocking repository operations, so they are cooperative rather than a hard deadline on arbitrary blocking work. The fixed Git command has a separate timeout and descendant-process cleanup. M1 is not a dynamic sandbox: `read_only_network_off` means this workflow introduces no network client or network operation, not that it creates an OS network namespace.
+
+An M1 source fact, `HypothesisDraft`, or `EvaluationStatus::Passed` is not a behavioral `Candidate`, an oracle verdict, or proof that a vulnerability exists. A `Completed` campaign also does not prove the repository secure. Offline `smash verify --bundle DIRECTORY` validates the canonical proposal/observation chain, evidence references, generated source excerpts, and artifact digests without opening the repository or contacting a planner or model. Integrity and schema validation do not establish provenance, truth at collection time, or a security verdict; the bundle format has no authenticity signature.
+
+### Implemented M2 slice: authenticated-retry fixture (2026-11-06)
+
+A separate opt-in CLI path admits only the exact four-field authenticated-retry JSON artifact and
+the reviewed, byte-pinned `target-authenticated-repro.py` entrypoint. It runs the same typed
+artifact against distinct supplied broken/fixed synthetic repositories and evaluates the bounded
+pair with `authenticated-retry-v1`. Source comments and JSON values are not a general plugin,
+Python, build, shell, or command interface. A serialized proposal cannot mint `AdmittedExecution`;
+admission binds the exact artifact/target/limits and one cleanup contract, and execution consumes
+that authority once. This M2-specific execution vocabulary is not the MVP `Call`/`AuthorizedCall`
+contract or a general `AdmittedCandidate` implementation.
+
+The contained runner is available only on supported unprivileged Linux (`x86_64`/`aarch64`) with
+`/usr/bin/python3`, working Landlock/seccomp, and private temporary storage. Filesystem rules,
+seccomp denial of socket creation, process groups, rlimits, minimal environment, bounded outputs,
+and descendant cleanup are used; unsupported setup fails closed. Runner identity includes its
+architecture and the containment helper digest, not a complete host/runtime fingerprint. There is a
+visibly separate fixture-only unsafe-development mode, but it is not a fallback or containment
+substitute and cannot produce `Reproduced`.
+
+`Reproduced` means only that broken returned `prior-session` and fixed returned `current-session`
+under otherwise valid paired observations, receipts, controls, and cleanup. It is not a security,
+safety, exploitability, production, attack-class-coverage, or general repository-finding verdict.
+An inverted control, timeout, denial, infrastructure error, changed source, missing output, or
+unresolved cleanup is not green. A valid offline bundle can nevertheless contain one of these
+non-green assessments. M2 `repro`/`repro-verify` return `0` only for this reproduced pair, `1` for a
+valid non-reproduced assessment, and generally `2` for refusals or operational/argument failures.
+This behavior is specifically distinct from the proposed general CI exit table in Section 10.
+
+`repro-verify --bundle DIRECTORY` checks the completed M2 bundle and recomputes the oracle without
+the original roots/artifact, code execution, model, or target. `repro-resume --policy FILE --bundle
+DIRECTORY` additionally hashes current producer inputs and can report `CompletedWithoutReplay`;
+`repro-rerun` uses fresh authorization/run identity. A private per-transition journal is synced best
+effort and a fully staged bundle is renamed into place. This is not arbitrary crash-durable
+recovery, and pending/incomplete work is not accepted as a completed bundle. The self-hashed bundle
+has no external signature/trust root, as with M1. See `target-onboarding.md` for exact commands and
+`llm-red-teaming-roadmap.md` for tested boundaries and remaining exclusions.
+
 ## 5. Scope, authority, and dispatch
 
 ### Scope: where a call may go
@@ -173,6 +220,96 @@ The fixture contract must make asynchronous completion observable. If it cannot 
 | `Error` | Smash could not complete execution or evidence processing because of an internal or operational failure. |
 
 An “accepted” gateway response without a backend effect does not by itself prove this invariant failed. It may justify a separate policy-response finding with its own oracle. A passing result is scoped to this invariant, technique version, target configuration, and fixture.
+
+### Implemented exception: the narrow M3 loopback target pack (2026-11-06)
+
+The `smash_engine::http` module and `http-discover`, `http-repro`, and `http-verify` CLI commands
+implement a separate typed workflow. This is not completion of all proposed HTTP/L1 behavior and
+does not change the Storm Gate lifecycle or `authenticated-retry-v1` oracle. Admitted policy is a
+reviewed `HttpCampaignPolicy` JSON value with exact disposable-fixture loopback origins, GET/POST
+routes, fixed headers, flat string fields, declared credential references, scalar JSON response
+schemas, controls, and bounded resources. Discovery rejects all mutations; reproduction requires
+an explicit flag and exactly one mutation with before/after/unknown-identity correlation. Route
+discovery and model-authored plans are not implemented.
+
+One `ureq` builder disables ambient proxies, redirects, and idle connection reuse, retains TLS
+verification, and filters the addresses produced by its actual connection resolver. Controlled
+timeouts, bounded bodies, declared credential injection, and typed response outcomes apply.
+Non-observations, unavailable or malformed receipts, unexpected statuses/scalars, and unresolved
+transport outcomes do not become passes. The in-process fixture and its cooperative budgets are
+not an L1 environment, an OS-enforced containment boundary, or evidence of downstream isolation.
+
+The M3 oracle is `http-scalar-differential-v1`. A mutation claimed as an effect requires fixed
+control before `0`, after `1`, and unknown identity `0`, all fixed expectations, complete
+correlated observations, a differing broken receipt, and both teardown attestations. The generic
+CLI owns no fixture teardown, so it leaves cleanup unattested and yields a valid inconclusive
+result, not a fabricated positive. The capstone's owning engine caller actually drops and joins
+fixtures before using the cleanup callback. Cleanup callbacks run after ordinary and error exits;
+independence, validity, and completion remain explicit verification conditions.
+
+Reproduction bundles contain bounded strict JSON policy, records, selected scalar observations,
+request/control metadata, body digests/lengths, and the exact policy copy. Raw response text and
+credential values are not retained. `http-verify` loads only a fresh bounded bundle directory,
+rejects unexpected/duplicate/oversized members, and recomputes the same oracle without a network,
+model, target, or credential. Bundle consistency is not a signature, collection authenticity, or
+production assurance. Read-only discovery persistence is a separate observation artifact.
+
+CLI exit codes are slice-specific: discovery succeeds with `0` only when all declared reads were
+observed; reproduction/verification return `0` for a reproduced assessment, `1` for a valid
+non-reproduced assessment, and `2` for invalid inputs, denial, or operational/argument errors.
+M3 does not implement this specification's proposed general CI semantics, in which confirmed
+security failure uses `1`. Valid bundles and reproduced fixture differentials do not imply a
+secure, exploitable, signed, independently attested, or production-representative target.
+
+The delivered scope and commands are in `target-onboarding.md` §1.3; containment limits are in
+`staging-and-containment.md` §4.2. M3 capstones cover the paired loopback fixture, expected
+duplicate/single effects, retry and authentication controls, credential exclusion, malformed
+contracts, CLI admission/refusal, actual teardown, and offline bundle/tamper verification after
+fixture shutdown. They do not establish a general endpoint scanner, broad staging runner, or
+security certification.
+
+### Implemented exception: bounded M4 read-only investigation (2026-11-06)
+
+The `smash_agent::investigation` protocol and `smash_engine::http::investigation` workflow add a
+narrow adaptive layer above M3. `http-investigate`, `http-investigate-resume`, and
+`http-investigate-verify` consume an `HttpInvestigationPolicy`: a nested M3 campaign whose catalog
+contains only read-only calls and no effect contract, a fixed queue of admitted item/call pairs,
+and finite read/planner/token budgets. This is separate typed authority; it neither broadens M1
+`PlannerOutput`/`ExperimentDraft` nor activates M2 unsafe seeding or M3 mutations.
+
+Each bounded version-1 planner response chooses only an admitted `{item_id, call_index}` or
+`complete`. Thoughts contain a bounded summary and full hypothesis/queue histories, immutable
+identities and allowed-call policy, status transitions, known observed-evidence references, and
+explicit input/output token deltas. Unknown fields, malformed/trailing JSON, fabricated evidence,
+history edits, unsupported schema versions, invalid transitions, or budget overruns are rejected
+without retrying the same response. Non-observations cannot support findings or completed queue
+items and do not imply absence of a target condition.
+
+The engine checks that decision, raw bytes, and digest agree before checkpointing. The only request
+selector crossing execution is a pre-admitted catalog index; the trusted adapter retains route,
+destination, headers, arguments, credentials, response schema, lifecycle, and scalar evidence. One
+selected read executes once with M3's controlled client. No model-authored request, effect seed,
+credential, redirect, mutation, or target expansion is accepted.
+
+A private pending directory holds raw responses, a strict append-only JSONL journal, and a state
+snapshot before atomic terminal publication. Resume validates policy identity and exact consumed
+script prefix. A selected read lacking its observation is unresolved and cannot be replayed;
+terminal runs and subsequent resume do not re-ask the planner or redispatch old reads. Call and
+planner ceilings include a final turn after the last permitted read. These are cooperative storage
+and process controls, not a signed event log or a hard scheduler.
+
+Offline verification re-decodes each exact response against replayed policy/state, correlates every
+read attempt to its admitted call, enforces disposition and response schemas, and checks the exact
+file set and journal snapshot. It performs no network, target, credential, resolver, or planner
+access. A valid or complete session establishes only bounded internal consistency and the planner's
+observation-linked hypotheses—not an external signature, a general security verdict, exhaustive
+coverage, or L1/L2 containment.
+
+The M4 capstones cover adaptive read selection, malformed/unknown selection, evidence-linked queue
+completion, read budgets, interrupted exact-prefix resume, unresolved-dispatch non-replay, completed
+no-replay, and post-shutdown offline/tamper checks. Hosted providers, repository/HTTP integrated
+planning, new mechanisms, novelty/dedup, cost/wall-time/concurrency controls, kill switches, and
+broad autonomy remain proposed. Commands and limits are detailed in `target-onboarding.md` §1.4.
 
 ## 8. Evidence and verification
 

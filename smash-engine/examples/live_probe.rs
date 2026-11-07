@@ -66,7 +66,14 @@ fn main() {
     println!("tool   : {tool}");
     println!("args   : {arguments}");
     println!("require: {required}");
-    println!("api key: {}", if api_key.is_some() { "set (Authorization: Bearer)" } else { "none" });
+    println!(
+        "api key: {}",
+        if api_key.is_some() {
+            "set (Authorization: Bearer)"
+        } else {
+            "none"
+        }
+    );
     println!("⚠  isolated test gateway only — not production.");
     println!("─────────────────────────────────────────────────────────────");
 

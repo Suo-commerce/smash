@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "responses": [
+    {
+      "schema_version": 1,
+      "action": "experiment",
+      "experiment": {
+        "schema_version": 1,
+        "experiment_id": "inventory",
+        "kind": "list_files",
+        "purpose": "Inventory source files before selecting a bounded source read",
+        "expected_evidence": "Sorted repository inventory",
+        "parameters": {}
+      }
+    },
+    {
+      "schema_version": 1,
+      "action": "experiment",
+      "experiment": {
+        "schema_version": 1,
+        "experiment_id": "inspect-dispatcher",
+        "kind": "read_file",
+        "purpose": "Inspect validation and interpreter ordering in the dispatcher",
+        "expected_evidence": "Numbered source excerpt with path and digest",
+        "parameters": {
+          "path": "src/dispatcher.rs",
+          "start_line": "1",
+          "line_count": "100"
+        }
+      }
+    },
+    {
+      "schema_version": 1,
+      "action": "experiment",
+      "experiment": {
+        "schema_version": 1,
+        "experiment_id": "working-tree",
+        "kind": "working_tree_status",
+        "purpose": "Record fixture cleanliness through a fixed no-prompt Git operation",
+        "expected_evidence": "Bounded working tree status or explicit operational failure",
+        "parameters": {}
+      }
+    },
+    {
+      "schema_version": 1,
+      "action": "experiment",
+      "experiment": {
+        "schema_version": 1,
+        "experiment_id": "secret-refusal",
+        "kind": "read_file",
+        "purpose": "Test executor admission independently of source comments",
+        "expected_evidence": "Explicit rejection with no secret artifact",
+        "parameters": {
+          "path": ".env"
+        }
+      }
+    },
+    {
+      "schema_version": 1,
+      "action": "complete",
+      "summary": "Source evidence supports one scoped dispatch hypothesis; dynamic behavior, hidden policies, and exhaustive coverage were not tested.",
+      "hypotheses": [
+        {
+          "hypothesis_id": "dispatcher-validation-order",
+          "statement": "The dispatcher evaluates untrusted input before semantic option validation and may expose interpreter-specific behavior across validation boundaries.",
+          "status": "supported",
+          "evidence_ids": ["artifact-2-1"],
+          "falsification_test": "Show that validate_options rejects unsupported grammar before interpreter::eval can observe input.",
+          "confidence": "medium"
+        }
+      ],
+      "evaluations": [
+        {
+          "evaluation_id": "runtime-coverage",
+          "scope": "run",
+          "subject_id": "recon-capstone",
+          "status": "missing",
+          "summary": "No dynamic vulnerability, hidden-policy, or change-fidelity test ran; the Git status result is operational evidence only.",
+          "evidence_ids": []
+        }
+      ]
+    }
+  ]
+}

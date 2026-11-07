@@ -145,10 +145,7 @@ impl std::error::Error for AdapterError {}
 /// authorizes: `power_move:<tool>:<sha256_hex(canonical_json(arguments))>` must
 /// equal the token's key. This is the gate the adapter applies before building
 /// any request — a token can never be reused to dispatch different content.
-pub fn bind_arguments(
-    authorized: &AuthorizedCall,
-    arguments: &Value,
-) -> Result<(), AdapterError> {
+pub fn bind_arguments(authorized: &AuthorizedCall, arguments: &Value) -> Result<(), AdapterError> {
     let tool = &authorized.call().tool;
     let produced = power_move_vouch(tool, arguments);
     let expected = authorized.key();
@@ -353,7 +350,10 @@ mod tests {
         let tc = &req.messages[0].tool_calls.as_ref().unwrap()[0];
         assert_eq!(tc.function.name, "send_payment");
         // Wire arguments are canonical (keys sorted), matching the digest.
-        assert_eq!(tc.function.arguments, r#"{"amount":"100","recipient":"landlord"}"#);
+        assert_eq!(
+            tc.function.arguments,
+            r#"{"amount":"100","recipient":"landlord"}"#
+        );
         // And the built call round-trips to the authorized key.
         assert!(tool_call_matches(tc, &authorized.key()));
     }
@@ -384,7 +384,8 @@ mod tests {
     fn matching_tool_call_is_accepted() {
         let args = json!({"amount": "100", "recipient": "landlord"});
         let authorized = authorized_over(&args);
-        let resp = response_with_tool_call("send_payment", r#"{"amount":"100","recipient":"landlord"}"#);
+        let resp =
+            response_with_tool_call("send_payment", r#"{"amount":"100","recipient":"landlord"}"#);
         assert_eq!(
             response_signal(&resp, &authorized.key()),
             Signal::GateVerdict { accepted: true }
@@ -417,7 +418,10 @@ mod tests {
         let args = json!({"amount": "100", "recipient": "landlord"});
         let authorized = authorized_over(&args);
         // A tool call went through, but for different arguments — not our probe.
-        let resp = response_with_tool_call("send_payment", r#"{"amount":"100","recipient":"someone_else"}"#);
+        let resp = response_with_tool_call(
+            "send_payment",
+            r#"{"amount":"100","recipient":"someone_else"}"#,
+        );
         assert_eq!(
             response_signal(&resp, &authorized.key()),
             Signal::GateVerdict { accepted: false }
@@ -467,6 +471,9 @@ mod tests {
         assert_eq!(resp.choices.len(), 1);
         let tc = &resp.choices[0].message.tool_calls.as_ref().unwrap()[0];
         assert_eq!(tc.function.name, "send_payment");
-        assert_eq!(tc.arguments_value().unwrap(), json!({"amount": "100", "recipient": "landlord"}));
+        assert_eq!(
+            tc.arguments_value().unwrap(),
+            json!({"amount": "100", "recipient": "landlord"})
+        );
     }
 }

@@ -1,6 +1,10 @@
 [workspace]
 resolver = "2"
-members = ["smash-core", "smash-engine"]
+members = ["smash-core", "smash-agent", "smash-engine", "smash-loop", "smash-generator", "smash-findings", "smash-capstone", "smash-cli"]
+exclude = ["smash-stormgate"]
+# smash-stormgate is an optional target pack, not part of the normal Smash
+# workspace. It links realfield_core through ../../stormlock/crates/realfield-core,
+# so it can only be built explicitly where that separate checkout is available.
 
 # Smash — red-teaming / breach-testing harness for hardening your own apps.
 #
@@ -13,6 +17,14 @@ members = ["smash-core", "smash-engine"]
 # crate, so it carries no dependencies of its own. smash-engine is where the
 # wire envelope, canonicalization, transport, fixtures, and execution live —
 # and where third-party dependencies are allowed, reviewed explicitly.
+# smash-findings is the candidate/finding lifecycle ledger (the control plane
+# that keeps candidate != finding honest at volume); its pure-data core needs
+# no workspace deps, and its `ingest` feature (default) reads generator/loop/
+# engine artifacts.
+# smash-capstone is the application/harness crate: the concrete differential-
+# discovery port impls (generator + dispatcher driving metamorphic pairs through
+# an in-process gate) and the end-to-end L0 capstone. It keeps target-flavoured
+# wiring out of the smash-loop safety kernel.
 
 [workspace.package]
 edition = "2021"
@@ -21,4 +33,6 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/Suo-commerce/smash"
 
 [workspace.lints.rust]
-unsafe_code = "forbid"
+# Deny unsafe by default. The Linux runner has one documented, narrowly scoped
+# pre_exec fcntl exception; changing parent descriptor flags races other spawns.
+unsafe_code = "deny"

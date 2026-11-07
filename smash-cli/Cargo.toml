@@ -1,0 +1,26 @@
+[package]
+name = "smash-cli"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "User-facing bounded repository reconnaissance and offline campaign verification."
+publish = false
+
+[[bin]]
+name = "smash"
+path = "src/main.rs"
+
+[dependencies]
+smash-agent = { path = "../smash-agent" }
+smash-core = { path = "../smash-core" }
+smash-engine = { path = "../smash-engine" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Safe SIGINT/SIGTERM registration without introducing unsafe CLI code.
+signal-hook = { version = "0.3.18", default-features = false }
+[dev-dependencies]
+rustix = { version = "0.38", features = ["process"] }
+[lints]
+workspace = true

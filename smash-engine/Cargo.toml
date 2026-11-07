@@ -13,6 +13,7 @@ publish = false
 # allowed to carry third-party deps, because it is the one that speaks the wire
 # envelope (OpenAI-compatible JSON) and computes the argument digest.
 smash-core = { path = "../smash-core" }
+smash-agent = { path = "../smash-agent" }
 
 # SHA-256 for the argument digest. Standard, widely audited; hand-rolling a hash
 # is its own risk, so this dependency is deliberate.
@@ -37,11 +38,11 @@ sha2 = "0.10.9"
 # has been stable for years, so any recent 1.0.x should match — but the
 # cross-implementation vectors (lifted from Storm Gate's own source) are the
 # contract that proves it, and the version should be pinned to theirs once known.
-serde_json = { version = "1.0.145", features = ["arbitrary_precision"] }
+serde_json = { version = "1", features = ["arbitrary_precision"] }
 
 # serde for the strict parse boundary's de traits (canonical) and the derived
 # wire-envelope types (adapter).
-serde = { version = "1.0.228", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
 
 # ureq is the blocking HTTP client behind the live Sender. Chosen deliberately:
 # it matches the serial MVP (no async runtime), is a small dependency tree, uses
@@ -51,8 +52,22 @@ serde = { version = "1.0.228", features = ["derive"] }
 # cross-origin rule) and never disables TLS verification.
 ureq = "2.12"
 
+# Standards-based URL parsing for the M3 target policy. This was already in the
+# lockfile through ureq; declaring it directly prevents hand-rolled authority
+# parsing from disagreeing with the HTTP client about origins and userinfo.
+url = "2.5"
+
+# Deadline-aware process waiting for the fixed repository Git inspection command.
+# The adapter never invokes a shell or accepts arbitrary model-provided arguments.
+wait-timeout = "0.2"
+
+# Safe directory-descriptor traversal, no-follow file opening, process groups,
+# and no-replace publication for the repository reconnaissance adapter.
+rustix = { version = "0.38", features = ["fs", "process", "rand"] }
+
 [lints]
-# unsafe_code = "forbid" applies to this crate's own code. Third-party deps are
-# reviewed on their own terms, per the spec: the lint does not remove transitive
-# risk, and we do not claim it does.
+# unsafe_code = "deny" applies to this crate's own code, except for the Linux
+# runner's documented child-local pre_exec fcntl. Third-party deps are reviewed
+# on their own terms, per the spec: the lint does not remove transitive risk,
+# and we do not claim it does.
 workspace = true

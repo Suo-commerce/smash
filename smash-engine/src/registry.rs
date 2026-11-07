@@ -267,8 +267,10 @@ impl Registry {
         &mut self,
         implementation: Box<dyn ApprovedTechnique>,
     ) -> Result<(), RegistryError> {
-        let handle =
-            TechniqueHandle::new(implementation.fighter_id().clone(), implementation.technique_name().clone());
+        let handle = TechniqueHandle::new(
+            implementation.fighter_id().clone(),
+            implementation.technique_name().clone(),
+        );
         if self.map.contains_key(&handle) {
             return Err(RegistryError::AlreadyRegistered { handle });
         }
@@ -308,8 +310,7 @@ impl Registry {
         let mut rejected = Vec::new();
 
         for declared in manifest.techniques() {
-            let handle =
-                TechniqueHandle::new(manifest.id().clone(), declared.name().clone());
+            let handle = TechniqueHandle::new(manifest.id().clone(), declared.name().clone());
             match self.map.get(&handle) {
                 None => rejected.push(AdmissionError::Unregistered { handle }),
                 Some(entry) => match contract_mismatch(declared, entry.declares()) {
@@ -437,7 +438,10 @@ mod tests {
         let err = reg.register(clamp_impl(clamp_technique())).unwrap_err();
         match err {
             RegistryError::AlreadyRegistered { handle } => {
-                assert_eq!(handle.technique, TechniqueName::new("write-via-readonly-session"));
+                assert_eq!(
+                    handle.technique,
+                    TechniqueName::new("write-via-readonly-session")
+                );
             }
         }
         assert_eq!(reg.len(), 1, "a rejected register must not clobber");
@@ -446,10 +450,7 @@ mod tests {
     #[test]
     fn lookup_miss_returns_none() {
         let reg = Registry::new();
-        let handle = TechniqueHandle::new(
-            FighterId::new("ghost"),
-            TechniqueName::new("nope"),
-        );
+        let handle = TechniqueHandle::new(FighterId::new("ghost"), TechniqueName::new("nope"));
         assert!(reg.get(&handle).is_none());
         assert!(!reg.contains(&handle));
     }
@@ -649,13 +650,19 @@ mod tests {
             FighterId::new("authority-clamp-differential"),
             TechniqueName::new("write-via-readonly-session"),
         );
-        assert_eq!(h.to_string(), "authority-clamp-differential/write-via-readonly-session");
+        assert_eq!(
+            h.to_string(),
+            "authority-clamp-differential/write-via-readonly-session"
+        );
         assert_eq!(TechniqueVersion(3).to_string(), "v3");
     }
 
     #[test]
     fn contract_field_display() {
-        assert_eq!(ContractField::RequiredAuthority.to_string(), "required authority");
+        assert_eq!(
+            ContractField::RequiredAuthority.to_string(),
+            "required authority"
+        );
         assert_eq!(ContractField::EvidenceSchema.to_string(), "evidence schema");
     }
 }

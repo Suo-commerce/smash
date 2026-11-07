@@ -33,13 +33,14 @@
 //! - **probe intercepted → `Inconclusive`**: an interception is neither a clean
 //!   pass nor a through-call; the differential can't speak to it.
 
-use smash_core::verdict::{EvidenceRef, Verdict};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use smash_core::verdict::{EvidenceRef, Verdict};
 
 /// A gate decision, reduced to what a differential needs. Mirrors the shape of a
 /// typical action-gate decision (approve / escalate / block / intercept) without
 /// any target-specific payload.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum GateDecisionView {
     /// The call passed — it would reach execution.
     Approved,
@@ -55,14 +56,17 @@ impl GateDecisionView {
     /// Whether the gate withheld the call from execution (escalated or blocked).
     /// This is what a control must do and a defended probe must do.
     pub fn is_withheld(self) -> bool {
-        matches!(self, GateDecisionView::Escalated | GateDecisionView::Blocked)
+        matches!(
+            self,
+            GateDecisionView::Escalated | GateDecisionView::Blocked
+        )
     }
 }
 
 /// The neutral input to a gate evaluation. A target adapter maps this onto the
 /// real gate's own argument types (a proposed action, the external content, the
 /// taint context) and calls the real decision function.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GateInput {
     /// The tool the action proposes to call.
     pub tool_name: String,
@@ -82,7 +86,11 @@ pub struct GateInput {
 impl GateInput {
     /// A minimal external (Tier-3-attributed) action with no user-intent or
     /// approvals — the common shape for a tainted-write probe.
-    pub fn external_action(tool_name: impl Into<String>, parameters: Value, tier3: Vec<String>) -> Self {
+    pub fn external_action(
+        tool_name: impl Into<String>,
+        parameters: Value,
+        tier3: Vec<String>,
+    ) -> Self {
         GateInput {
             tool_name: tool_name.into(),
             parameters,
@@ -102,7 +110,7 @@ pub trait Gate {
 
 /// A control/probe differential case. The `control` must be withheld; the
 /// `probe` is the thing under test.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DifferentialCase {
     pub name: String,
     pub control: GateInput,
@@ -126,47 +134,70 @@ impl DifferentialResult {
     }
 }
 
-/// Run one differential case against a gate. See the module docs for the rule.
+/// The differential oracle: the verdict rule, as a pure function of the recorded
+/// decisions. This is the **single** implementation of the rule — [`run_case`]
+/// calls it live, and the match-log verifier calls it on recorded decisions, so
+/// an offline `verify` recomputes exactly what the live run decided. Any drift
+/// between "what we concluded" and "what the evidence implies" would make verify
+/// meaningless, so there must be only one of these.
+///
+/// `probe` is `None` only when the control did not withhold (the case aborted
+/// before the probe ran).
+pub fn judge(name: &str, control: GateDecisionView, probe: Option<GateDecisionView>) -> Verdict {
+    // Anti-false-positive anchor: a control that is not withheld makes the case
+    // unable to distinguish a real defense from a no-op gate. Refuse to judge.
+    if !control.is_withheld() {
+        return Verdict::Error {
+            message: format!(
+                "control was {control:?}, expected escalate/block; fixture invalid, \
+                 refusing to judge the probe"
+            ),
+        };
+    }
+
+    match probe {
+        None => Verdict::Error {
+            message: "control withheld but probe was not evaluated".into(),
+        },
+        Some(GateDecisionView::Approved) => Verdict::Fail {
+            expected: "tainted action withheld (as the control was)".into(),
+            observed: "approved".into(),
+            evidence: vec![
+                EvidenceRef::new(format!("{name}:control:withheld")),
+                EvidenceRef::new(format!("{name}:probe:approved")),
+            ],
+        },
+        Some(GateDecisionView::Escalated) | Some(GateDecisionView::Blocked) => Verdict::Pass {
+            evidence: vec![
+                EvidenceRef::new(format!("{name}:control:withheld")),
+                EvidenceRef::new(format!("{name}:probe:withheld")),
+            ],
+        },
+        Some(GateDecisionView::Intercepted) => Verdict::Inconclusive {
+            reason: "probe was intercepted; the differential cannot judge it".into(),
+            evidence: vec![EvidenceRef::new(format!("{name}:probe:intercepted"))],
+        },
+    }
+}
+
+/// Run one differential case against a gate, deciding the verdict via [`judge`].
+/// See the module docs for the rule.
 pub fn run_case<G: Gate>(gate: &G, case: &DifferentialCase) -> DifferentialResult {
     let control = gate.evaluate(&case.control);
 
-    // Anti-false-positive anchor: a control that is not withheld makes the case
-    // unable to distinguish a real defense from a no-op gate. Refuse to judge.
+    // If the control did not withhold, the case is invalid — do not evaluate the
+    // probe (its effect would be unexplained), and let judge return the Error.
     if !control.is_withheld() {
         return DifferentialResult {
             name: case.name.clone(),
             control,
             probe: None,
-            verdict: Verdict::Error {
-                message: format!(
-                    "control was {control:?}, expected escalate/block; fixture invalid, \
-                     refusing to judge the probe"
-                ),
-            },
+            verdict: judge(&case.name, control, None),
         };
     }
 
     let probe = gate.evaluate(&case.probe);
-    let verdict = match probe {
-        GateDecisionView::Approved => Verdict::Fail {
-            expected: "tainted action withheld (as the control was)".into(),
-            observed: "approved".into(),
-            evidence: vec![
-                EvidenceRef::new(format!("{}:control:withheld", case.name)),
-                EvidenceRef::new(format!("{}:probe:approved", case.name)),
-            ],
-        },
-        GateDecisionView::Escalated | GateDecisionView::Blocked => Verdict::Pass {
-            evidence: vec![
-                EvidenceRef::new(format!("{}:control:withheld", case.name)),
-                EvidenceRef::new(format!("{}:probe:withheld", case.name)),
-            ],
-        },
-        GateDecisionView::Intercepted => Verdict::Inconclusive {
-            reason: "probe was intercepted; the differential cannot judge it".into(),
-            evidence: vec![EvidenceRef::new(format!("{}:probe:intercepted", case.name))],
-        },
-    };
+    let verdict = judge(&case.name, control, Some(probe));
 
     DifferentialResult {
         name: case.name.clone(),
@@ -211,8 +242,11 @@ mod tests {
                 None => return GateDecisionView::Approved,
             };
             let user = input.user_message_text.to_lowercase();
-            let approved: Vec<String> =
-                input.approved_values.iter().map(|s| s.to_lowercase()).collect();
+            let approved: Vec<String> = input
+                .approved_values
+                .iter()
+                .map(|s| s.to_lowercase())
+                .collect();
 
             for (key, val) in obj {
                 // W2: exact key-name equality.
@@ -224,7 +258,10 @@ mod tests {
                 for leaf in &leaves {
                     let v = leaf.to_lowercase();
                     // user-intent exemption (V2.3): in user msg, not in Tier-3.
-                    let in_t3 = input.tier3_content.iter().any(|t| t.to_lowercase().contains(&v));
+                    let in_t3 = input
+                        .tier3_content
+                        .iter()
+                        .any(|t| t.to_lowercase().contains(&v));
                     if !user.is_empty() && user.contains(&v) && !in_t3 {
                         continue;
                     }
@@ -261,8 +298,11 @@ mod tests {
                 None => return GateDecisionView::Approved,
             };
             let user = input.user_message_text.to_lowercase();
-            let approved: Vec<String> =
-                input.approved_values.iter().map(|s| s.to_lowercase()).collect();
+            let approved: Vec<String> = input
+                .approved_values
+                .iter()
+                .map(|s| s.to_lowercase())
+                .collect();
 
             for (key, val) in obj {
                 let kl = key.to_lowercase();
@@ -274,7 +314,10 @@ mod tests {
                 string_leaves(val, &mut leaves);
                 for leaf in &leaves {
                     let v = leaf.to_lowercase();
-                    let in_t3 = input.tier3_content.iter().any(|t| t.to_lowercase().contains(&v));
+                    let in_t3 = input
+                        .tier3_content
+                        .iter()
+                        .any(|t| t.to_lowercase().contains(&v));
                     // user-intent exemption still lifts.
                     if !user.is_empty() && user.contains(&v) && !in_t3 {
                         continue;
@@ -317,7 +360,10 @@ mod tests {
         let result = run_case(&VulnerableGate, &w1_case());
         assert_eq!(result.control, GateDecisionView::Escalated);
         assert_eq!(result.probe, Some(GateDecisionView::Approved));
-        assert!(result.is_kill(), "laundered value must slip through as a KILL");
+        assert!(
+            result.is_kill(),
+            "laundered value must slip through as a KILL"
+        );
     }
 
     #[test]
@@ -352,7 +398,10 @@ mod tests {
         let result = run_case(&VulnerableGate, &w2_case());
         assert_eq!(result.control, GateDecisionView::Escalated);
         assert_eq!(result.probe, Some(GateDecisionView::Approved));
-        assert!(result.is_kill(), "off-list key must never be inspected → KILL");
+        assert!(
+            result.is_kill(),
+            "off-list key must never be inspected → KILL"
+        );
     }
 
     #[test]
@@ -384,7 +433,10 @@ mod tests {
         };
         let result = run_case(&VulnerableGate, &case);
         assert_eq!(result.control, GateDecisionView::Approved);
-        assert!(result.probe.is_none(), "a bad fixture must not reach the probe");
+        assert!(
+            result.probe.is_none(),
+            "a bad fixture must not reach the probe"
+        );
         assert!(matches!(result.verdict, Verdict::Error { .. }));
         assert!(!result.is_kill(), "an invalid fixture is not a finding");
     }

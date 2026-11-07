@@ -53,7 +53,10 @@ impl Sender for HttpSender {
     fn send(&self, request: &EgressRequest) -> Result<RawResponse, TransportError> {
         let url = format!("{}{}", request.target.as_str(), request.path);
 
-        let mut req = self.agent.post(&url).set("Content-Type", "application/json");
+        let mut req = self
+            .agent
+            .post(&url)
+            .set("Content-Type", "application/json");
         // Connection headers (e.g. Authorization) are set here. They are not
         // logged by this crate; the EgressRequest Debug impl redacts them.
         for (name, value) in &request.headers {

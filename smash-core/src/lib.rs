@@ -38,6 +38,8 @@
 
 pub mod capability;
 pub mod correlation;
+pub mod execution;
 pub mod fighter;
 pub mod lifecycle;
+pub mod research;
 pub mod verdict;

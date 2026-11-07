@@ -135,7 +135,92 @@ Two constraints:
   wall: it becomes a typed candidate handle, never free text that could steer the
   harness or a model via a poisoned "advisory".
 
-## 6. The invariant across all of it
+## 6. Safe discovery of the unknown — the safety case and the capability ladder
+
+The unanticipated attack is the one that hurts a developer who has never heard of
+it, so "find what we can't see" (§1) is the point of Smash, not a stretch goal.
+The question is not *whether* to run discovery but *how to run it safely*. The
+answer rests on two safety axes, kept deliberately separate, both already built
+into the workspace — and a reframe of what the search looks for.
+
+### 6.1 Two safety axes
+
+- **Containment — safety of execution.** A discovery probe may be novel and
+  aggressive, but its *effect* is fenced regardless of what it does: it fires only
+  in a disposable canary (or an explicitly authorized staging environment), under
+  the capability gate, through the controlled transport, within a run-level
+  dispatch ceiling, and **never** against a production environment (L2 is a hard
+  exclusion). An unresolved mutating effect raises the quiescence barrier — no
+  further mutating dispatch until quiescence or isolation is proven, else the run
+  aborts. So "we don't know what this probe does" is survivable: the worst case is
+  bounded, reversible, and inside the fence. (See `staging-and-containment.md` and
+  `autonomous-loop.md` §3.)
+- **Honesty — safety of inference.** A discovered divergence is a *candidate
+  observation*, never an auto-promoted finding and never an auto-fix. The oracle
+  asymmetry holds: an invariant violation is a **KILL**; a non-violation is
+  **Inconclusive**, never a **Pass**. A clean discovery run means "no divergence
+  observed along this trajectory," not "secure." Promotion to a catalog finding
+  requires a human to ratify the invariant and seed a failing fixture. So novelty
+  cannot manufacture a false verdict, and a discovery run can never quietly bless
+  a target as safe.
+
+These are independent of *how novel* the probe is. Safety does not come from
+preventing novelty; it comes from **fencing novelty's effects (containment) and
+refusing to let novelty score itself (honesty).**
+
+### 6.2 The reframe that makes it work
+
+A catalog of attacks can only test attacks someone already wrote down — useless
+against the unknown. Discovery inverts the search: instead of enumerating
+*attacks*, state an **invariant from the threat model** — what must always be true
+regardless of input — and search for any input that **violates** it. The developer
+does not need to know the attack; they need to know the invariant. The
+counterexample *is* the new attack, learned from the violation.
+
+This is why metamorphic relations (§2.2) are the heart of safe discovery:
+"equivalent encodings must get equal decisions", "lowering permission must never
+enable more effects", "external (Tier-3) content cannot learn or forge its own
+session delimiter" (fighter #2). The invariant comes from the threat model, not
+the gate's source — so a violation can genuinely surprise its author. A mutator
+generates the paired or varied inputs; the relation is the oracle; a break is a
+finding no one pre-specified. The developer's knowledge requirement moves from
+"every attack" (unbounded, and the dangerous ones are the ones they lack) to
+"what must hold" (bounded, and what they actually understand about their system).
+
+### 6.3 The capability ladder (honest about reach)
+
+- **Tier A — model-free discovery (safe, near-term, build now).** Human-authored
+  threat-model invariants, expressed as differential + metamorphic relations, ×
+  a reviewed mutator library × seeded, coverage-guided search, all inside the
+  containment envelope. Finds new *instances* within understood mechanism classes,
+  and — through metamorphic relations — genuine violations the invariant's author
+  did not anticipate. No model inside Smash; the oracle stays deterministic and
+  replayable. This is fighter #2's shape and the phase-2 generator's job
+  (`generator-model-free.md`), and it is what we build next.
+- **Tier B — model-assisted mechanism discovery (gated frontier, §13.G).** A
+  quarantined model proposes *new mechanisms* a human never templated. This is the
+  only path to genuinely novel *mechanism* classes, and it is the most dangerous
+  to build, so it carries the strictest gate (§4): the model is a player never the
+  referee, its output is an inert declarative candidate that must clear admission,
+  candidate ≠ finding, and the generator is a separate trust domain with its own
+  threat model. Approached only after Tier A is proven out and the §13.G threat
+  model is ratified — never as a quiet escalation of Tier A.
+
+### 6.4 The honest boundary
+
+Tier A finds **instances, not mechanisms**: a mutator sweeps the neighbourhood of
+an invariant a human stated and surfaces violations within it. It cannot invent an
+invariant nobody wrote — that is Tier B, or human authorship. This is the same
+limit as the mutator library (a mutator generalizes a *known transformation class*
+into a reusable search axis; it does not discover a new class). What makes *both*
+tiers safe is identical and independent of their reach: containment bounds the
+effect, and candidate ≠ finding plus the oracle asymmetry bound the claim. The
+honest promise is therefore strong but exact: **Smash can safely search for, and
+surface as reproducible candidate evidence, violations of any invariant a human
+can state — including violations produced by attacks the developer had never heard
+of — while never letting that search escape its fence or mint its own verdict.**
+
+## 7. The invariant across all of it
 
 Model, catalog, generator, differential, metamorphic — every one of these is a
 *source of plays*. The service remains the arena; the oracle remains the

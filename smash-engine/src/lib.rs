@@ -17,17 +17,28 @@
 //!   vouch with, or the replay contract breaks silently. It is hand-rolled, not
 //!   delegated, and pinned by cross-implementation test vectors against the
 //!   actual Storm Gate implementation.
+//! - **Candidate key** (`candidate_key`) — the internal, content-only candidate
+//!   identity for dedup/poison (admission-funnel §2). Distinct from the
+//!   target-mirroring `CallKey` above: it is matched against nothing external, so
+//!   it reuses `canonical`'s JSON form as a convenience, not as a contract. Admission
+//!   recomputes it from validated content rather than trusting an untrusted
+//!   generator's supplied key.
 //! - **Registry** — maps each manifest handle to an approved, versioned
 //!   technique implementation. A [`Manifest`](smash_core::fighter::Manifest)
 //!   only *declares*; the registry is the gate between declared and runnable, so
 //!   a manifest alone can never introduce executable behavior.
+//! - **Parameter bounds** (`bounds`) — the reviewed, versioned per-template param
+//!   bounds (`ParamSpec`) owned by the registry; the trusted declaration side of the
+//!   §4 stage-2 admission check. The value check lives in `smash-loop`.
 //! - **Target adapter** — translates between core's abstract
 //!   [`Call`](smash_core::capability::Call) / [`Signal`](smash_core::fighter::Signal)
 //!   and the target's wire envelope (OpenAI-compatible JSON for the first
 //!   target).
 //! - **Transport** — the single controlled egress path every dispatch must go
 //!   through: origin validation, destination binding, response-byte limits. TLS
-//!   verification is never disabled and the proxy is never bypassed.
+//!   verification is never disabled. The generic M3 fixture pack additionally
+//!   disables ambient proxy use and filters its actual connection addresses.
+
 //! - **Fixture orchestration** — provisioning the canary backend, isolated
 //!   namespace, and state snapshots a technique's
 //!   [`Prerequisite`](smash_core::fighter::Prerequisite)s demand; cleanup on
@@ -52,9 +63,16 @@
 //! Modules are added one at a time as they are built; `canonical` is first.
 
 pub mod adapter;
+pub mod bounds;
+pub mod candidate_key;
 pub mod canonical;
 pub mod differential;
 pub mod execute;
+pub mod http;
 pub mod http_sender;
+pub mod matchlog;
+pub mod recon;
 pub mod registry;
+pub mod repro;
 pub mod transport;
+pub mod workflow;

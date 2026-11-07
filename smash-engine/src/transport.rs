@@ -353,7 +353,10 @@ mod tests {
         let t = ControlledTransport::new(Scope::new([storm_gate()]), sender);
         let elsewhere = Target::new("http://127.0.0.1:9999");
         let err = t.dispatch(&req(elsewhere.clone(), 1024)).unwrap_err();
-        assert_eq!(err, TransportError::DestinationNotInScope { target: elsewhere });
+        assert_eq!(
+            err,
+            TransportError::DestinationNotInScope { target: elsewhere }
+        );
         assert!(
             !t.sender.called.get(),
             "destination check must short-circuit before the sender is called"
@@ -478,7 +481,10 @@ mod tests {
         };
         let dbg = format!("{r:?}");
         assert!(dbg.contains("Authorization: <redacted>"));
-        assert!(!dbg.contains("super-secret"), "the key must never appear in Debug");
+        assert!(
+            !dbg.contains("super-secret"),
+            "the key must never appear in Debug"
+        );
     }
 
     // ── IO propagation ───────────────────────────────────────────────

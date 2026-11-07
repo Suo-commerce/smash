@@ -317,7 +317,10 @@ mod tests {
     fn empty_containers_are_compact() {
         assert_eq!(canonical_json(&json!({})), "{}");
         assert_eq!(canonical_json(&json!([])), "[]");
-        assert_eq!(canonical_json(&json!({"a": {}, "b": []})), r#"{"a":{},"b":[]}"#);
+        assert_eq!(
+            canonical_json(&json!({"a": {}, "b": []})),
+            r#"{"a":{},"b":[]}"#
+        );
     }
 
     #[test]
@@ -337,7 +340,10 @@ mod tests {
     fn gate_v6_4_recursive_sort_vector() {
         // From gate.rs V6.4: nested sort, compact.
         let a = json!({"b": {"z": 1, "a": 2}, "a": [{"y": 1, "x": 2}]});
-        assert_eq!(canonical_json(&a), r#"{"a":[{"x":2,"y":1}],"b":{"a":2,"z":1}}"#);
+        assert_eq!(
+            canonical_json(&a),
+            r#"{"a":[{"x":2,"y":1}],"b":{"a":2,"z":1}}"#
+        );
     }
 
     #[test]
@@ -377,8 +383,14 @@ mod tests {
 
     #[test]
     fn parse_rejects_garbage_trailing_data_and_empty() {
-        assert!(matches!(parse_no_duplicates(b"not json"), Err(CanonError::Json(_))));
-        assert!(matches!(parse_no_duplicates(b"{} trailing"), Err(CanonError::Json(_))));
+        assert!(matches!(
+            parse_no_duplicates(b"not json"),
+            Err(CanonError::Json(_))
+        ));
+        assert!(matches!(
+            parse_no_duplicates(b"{} trailing"),
+            Err(CanonError::Json(_))
+        ));
         assert!(matches!(parse_no_duplicates(b""), Err(CanonError::Json(_))));
     }
 
@@ -398,9 +410,18 @@ mod tests {
 
     #[test]
     fn numeric_semantics_v2_integers_exact_floats_normalized() {
-        assert_eq!(canonical_json_bytes(b"{\"n\":1}").expect("int"), r#"{"n":1}"#);
-        assert_eq!(canonical_json_bytes(b"{\"n\":1.0}").expect("float"), r#"{"n":1.0}"#);
-        assert_eq!(canonical_json_bytes(b"{\"n\":1e0}").expect("exp"), r#"{"n":1.0}"#);
+        assert_eq!(
+            canonical_json_bytes(b"{\"n\":1}").expect("int"),
+            r#"{"n":1}"#
+        );
+        assert_eq!(
+            canonical_json_bytes(b"{\"n\":1.0}").expect("float"),
+            r#"{"n":1.0}"#
+        );
+        assert_eq!(
+            canonical_json_bytes(b"{\"n\":1e0}").expect("exp"),
+            r#"{"n":1.0}"#
+        );
         assert_eq!(
             canonical_json_bytes(b"{\"n\":9007199254740993}").expect("u64"),
             r#"{"n":9007199254740993}"#
@@ -443,7 +464,9 @@ mod tests {
     fn args_hash_is_lowercase_64_hex() {
         let h = args_hash(&json!({"a": 1}));
         assert_eq!(h.len(), 64);
-        assert!(h.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase()));
+        assert!(h
+            .bytes()
+            .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase()));
     }
 
     #[test]

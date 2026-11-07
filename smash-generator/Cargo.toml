@@ -1,0 +1,20 @@
+[package]
+name = "smash-generator"
+version = "0.1.0"
+edition = "2021"
+description = "Phase-2 model-free candidate generator: the declarative candidate format, quarantined — depends on smash-core only, so it cannot reach the wire."
+license = "MIT OR Apache-2.0"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+# The no-dispatch wall as a dependency fact (phase-2 §7): smash-generator depends on
+# smash-core ONLY. It does not depend on smash-engine, so it cannot name transport,
+# a Sender, or the execute path — it is structurally incapable of putting a byte on
+# the wire. It also takes no serde: params use a core-only value type, and the
+# conversion to the engine's serde_json::Value happens at the loop/engine adapter
+# boundary, keeping this crate's dependency surface to smash-core alone.
+[dependencies]
+smash-core = { path = "../smash-core" }
+
+[dev-dependencies]

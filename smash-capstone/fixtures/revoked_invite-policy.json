@@ -1,0 +1,37 @@
+{
+  "protocol_version": 1,
+  "run_id": "revoked-invite-capstone-v1",
+  "scenario": "revoked-invite-acceptance-v1",
+  "oracle": "revoked-invite-differential-v1",
+  "provider": "linux-landlock-seccomp",
+  "evidence_schema": 1,
+  "broken_driver": {
+    "path": "/srv/oc-projects/smash/smash-capstone/fixtures/revoked_invite.py",
+    "sha256": "de6054ffb6abc4e93e56482c16a90e1ee611173ac1d62900e9a04d2398ff24a8"
+  },
+  "fixed_driver": {
+    "path": "/srv/oc-projects/smash/smash-capstone/fixtures/revoked_invite.py",
+    "sha256": "de6054ffb6abc4e93e56482c16a90e1ee611173ac1d62900e9a04d2398ff24a8"
+  },
+  "broken_root": "/tmp/opencode/smash-m5-target-capstone-broken",
+  "fixed_root": "/tmp/opencode/smash-m5-target-capstone-fixed",
+  "control_root": "/tmp/opencode/smash-m5-target-capstone-control",
+  "identities": {
+    "project": "project-m5",
+    "owner": "owner-m5",
+    "guest": "guest-m5",
+    "invitation": "invitation-m5"
+  },
+  "credential_reference": "synthetic-guest",
+  "limits": {
+    "wall_ms": 5000,
+    "output_bytes": 65536,
+    "memory_bytes": 134217728,
+    "processes": 1
+  },
+  "synthetic_guests": true,
+  "disposable_targets": true,
+  "target_destruction": true,
+  "network": "none",
+  "unsafe_development": false
+}

@@ -1,0 +1,36 @@
+[package]
+name = "smash-stormgate"
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.74"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Suo-commerce/smash"
+description = "Storm Gate target pack for Smash: the RealfieldGate adapter (calls the real realfield_core action gate) and the F-B W1/W2 differential probe tables."
+publish = false
+
+# This crate is the ONLY place that links the target. It is kept out of the
+# smash workspace `members` (see the root Cargo.toml `exclude`) because the
+# realfield_core path dep below only resolves where stormlock is checked out.
+# To build it: move "smash-stormgate" from `exclude` to `members` in the root
+# Cargo.toml (or build it in a tree where the path resolves), then
+# `cargo run -p smash-stormgate`.
+
+[dependencies]
+smash-core = { path = "../smash-core" }
+smash-engine = { path = "../smash-engine" }
+
+# The target under test. A PATH dep points at the working tree — right for the
+# find->fix loop, where you test the uncommitted W1/W2 fix. For recorded §5
+# regression evidence, pin a git rev instead and let the runner log the build
+# string (see src/lib.rs `provenance::gate_build`). NOTE: this path is relative
+# to THIS crate's directory, so it is `../../stormlock/...`, not `../stormlock/`.
+# Adjust if your checkout layout differs.
+realfield_core = { package = "realfield-core", path = "../../stormlock/crates/realfield-core" }
+
+serde_json = "1"
+
+[lints.rust]
+# First-party crate: forbid unsafe, same posture as the rest of the workspace.
+# (Written explicitly rather than inherited, so the crate builds even before it
+# is added to the workspace members.)
+unsafe_code = "forbid"

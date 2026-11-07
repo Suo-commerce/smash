@@ -1,0 +1,19 @@
+[package]
+name = "smash-loop"
+version = "0.1.0"
+edition = "2021"
+description = "Phase-3 autonomous test-and-adjust discovery loop: safety kernel (build-order item 1), reconciled onto smash-core."
+license = "MIT OR Apache-2.0"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[dependencies]
+smash-core = { path = "../smash-core" }
+smash-engine = { path = "../smash-engine" }
+smash-generator = { path = "../smash-generator" }
+# Keep the workspace's ordinary loose serde_json pin. The separately built optional
+# Stormgate target pack must review any external graph compatibility independently.
+serde_json = "1"
+
+[dev-dependencies]

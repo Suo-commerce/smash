@@ -292,7 +292,9 @@ mod tests {
         }
         fn io() -> Self {
             FakeSender {
-                result: Err(TransportError::Io { detail: "reset".into() }),
+                result: Err(TransportError::Io {
+                    detail: "reset".into(),
+                }),
                 called: Cell::new(false),
             }
         }
@@ -381,7 +383,10 @@ mod tests {
 
         assert!(!outcome.was_executed());
         assert_eq!(outcome.attempt(), AttemptState::Intended);
-        assert!(matches!(outcome, DispatchOutcome::NotExecuted(NotExecuted::Binding(_))));
+        assert!(matches!(
+            outcome,
+            DispatchOutcome::NotExecuted(NotExecuted::Binding(_))
+        ));
         assert!(!t.sender().called.get(), "nothing should reach the sender");
     }
 
@@ -418,7 +423,7 @@ mod tests {
     fn destination_not_in_egress_scope_is_not_executed() {
         let args = json!({"amount": "100", "recipient": "landlord"});
         let authorized = authorized_over(&args); // target = storm_gate
-        // Transport's egress allowlist does NOT include storm_gate.
+                                                 // Transport's egress allowlist does NOT include storm_gate.
         let t = transport_to(
             Target::new("http://127.0.0.1:9999"),
             FakeSender::body("unused"),
@@ -479,7 +484,10 @@ mod tests {
         let outcome = execute_probe(&t, &ctx(expiry(), 5), &authorized, &args);
         assert_eq!(outcome.attempt(), AttemptState::Resolved);
         assert!(outcome.was_executed());
-        assert!(outcome.observation().is_none(), "a 401 is not a gate verdict");
+        assert!(
+            outcome.observation().is_none(),
+            "a 401 is not a gate verdict"
+        );
         assert!(matches!(
             outcome,
             DispatchOutcome::NoSignal(NoSignal::HttpError { status: 401, .. })
@@ -508,7 +516,13 @@ mod tests {
         let t = transport_to(storm_gate(), FakeSender::io());
         let outcome = execute_probe(&t, &ctx(expiry(), 5), &authorized, &args);
         assert_eq!(outcome.attempt(), AttemptState::Unresolved);
-        assert!(outcome.was_executed(), "an unresolved probe DID leave the building");
-        assert!(matches!(outcome, DispatchOutcome::Unresolved(TransportError::Io { .. })));
+        assert!(
+            outcome.was_executed(),
+            "an unresolved probe DID leave the building"
+        );
+        assert!(matches!(
+            outcome,
+            DispatchOutcome::Unresolved(TransportError::Io { .. })
+        ));
     }
 }

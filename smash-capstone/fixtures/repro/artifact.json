@@ -1,0 +1,1 @@
+{"protocol_version":1,"target_tool":"authenticated-retry","action":"retry_after_authenticated_refresh","expected_state":"current-session"}
